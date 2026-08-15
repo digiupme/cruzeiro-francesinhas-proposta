@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cruzeiro das Francesinhas — Proposta Técnica | digiUP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08080a;
+  --bg-soft:#0e0e12;
+  --panel:#111116;
+  --panel-2:#151519;
+  --line:rgba(255,255,255,0.09);
+  --line-soft:rgba(255,255,255,0.05);
+  --white:#f4f3f0;
+  --muted:#9b9ba3;
+  --muted-2:#86868e;
+  --red:#d31427;
+  --red-2:#ff4b42;
+  --red-dim:#4a1414;
+  --green:#3ddc84;
+  --radius:2px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{
+  height:100%;
+  background:var(--bg);
+  color:var(--white);
+  font-family:'Lexend',sans-serif;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--red);color:#fff;}
+.eyebrow{
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:var(--red-2);
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:18px;
+}
+.eyebrow::before{content:'';width:22px;height:1px;background:var(--red);display:inline-block;}
+h1,h2,h3{font-family:'Lexend',sans-serif;letter-spacing:0.005em;font-weight:500;text-transform:uppercase;}
+#bg-canvas{position:fixed;inset:0;z-index:0;opacity:0.85;pointer-events:none;}
+#grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.035;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.deck{position:relative;z-index:2;height:100vh;width:100vw;}
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  padding:64px 88px;
+  opacity:0;
+  transform:translateY(24px) scale(0.99);
+  transition:opacity 0.55s cubic-bezier(.22,.9,.32,1), transform 0.65s cubic-bezier(.22,.9,.32,1);
+  pointer-events:none;
+}
+.slide.active{opacity:1;transform:translateY(0) scale(1);pointer-events:auto;z-index:3;}
+.slide-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:auto;}
+.slide-num{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--red-2);letter-spacing:0.05em;}
+.brand-mark{font-family:'Lexend',sans-serif;font-weight:700;font-size:14px;letter-spacing:0.02em;color:var(--muted);display:flex;align-items:center;gap:8px;}
+.brand-mark b{color:var(--white);}
+.brand-mark .dot{width:6px;height:6px;background:var(--red);border-radius:50%;display:inline-block;}
+.logo-mark{height:36px;width:auto;fill:var(--white);opacity:0.95;}
+.logo-mark-lg{height:38px;width:auto;fill:var(--white);}
+.logo-mark-xl{height:52px;width:auto;fill:var(--white);}
+
+/* NAV */
+.nav-ui{position:fixed;z-index:10;}
+.progress-track{position:fixed;top:0;left:0;height:2px;width:100%;background:var(--line-soft);z-index:20;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--red-2));width:0%;transition:width .5s ease;}
+.counter{position:fixed;bottom:36px;left:88px;z-index:20;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted);display:flex;align-items:baseline;gap:6px;}
+.counter b{color:var(--white);font-size:16px;}
+.arrows{position:fixed;bottom:32px;right:88px;z-index:20;display:flex;gap:10px;}
+.arrow-btn{
+  width:46px;height:46px;border-radius:50%;
+  border:1px solid var(--line);background:rgba(255,255,255,0.02);
+  color:var(--white);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .25s ease;backdrop-filter:blur(6px);
+  overflow:hidden;
+}
+.arrow-btn:hover{border-color:var(--red);background:rgba(211,20,39,0.14);box-shadow:0 0 18px rgba(211,20,39,0.25);transform:scale(1.06);}
+.arrow-btn:disabled{opacity:0.25;cursor:default;}
+.arrow-btn:disabled:hover{border-color:var(--line);background:rgba(255,255,255,0.02);box-shadow:none;transform:none;}
+.arrow-ic{display:inline-block;transition:transform .25s ease;}
+@keyframes nudgeRight{0%,100%{transform:translateX(0);}50%{transform:translateX(3px);}}
+@keyframes nudgeLeft{0%,100%{transform:translateX(0);}50%{transform:translateX(-3px);}}
+#nextBtn:not(:disabled) .arrow-ic{animation:nudgeRight 2.4s ease-in-out infinite;}
+#prevBtn:not(:disabled) .arrow-ic{animation:nudgeLeft 2.4s ease-in-out infinite;}
+#nextBtn:hover .arrow-ic{animation:none;transform:translateX(5px);}
+#prevBtn:hover .arrow-ic{animation:none;transform:translateX(-5px);}
+.dots{position:fixed;right:32px;top:50%;transform:translateY(-50%);z-index:20;display:flex;flex-direction:column;gap:7px;}
+.dots .d{width:5px;height:5px;border-radius:50%;background:var(--line);cursor:pointer;transition:all .3s ease;position:relative;}
+.dots .d.active{background:var(--red);height:16px;border-radius:3px;}
+.dots .d:hover{background:var(--muted);}
+.dots .d .tip{
+  position:absolute;right:18px;top:50%;transform:translateY(-50%);
+  background:#151519;border:1px solid var(--line);padding:6px 12px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);
+  white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s ease;
+}
+.dots .d:hover .tip{opacity:1;}
+
+/* TOP-LEFT UTILITY BUTTONS */
+.util-btns{position:fixed;left:32px;top:50%;transform:translateY(-50%);z-index:25;display:flex;flex-direction:column;gap:10px;}
+.util-btn{
+  width:38px;height:38px;border-radius:50%;border:1px solid var(--line);
+  background:rgba(255,255,255,0.02);color:var(--muted);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:all .25s ease;backdrop-filter:blur(6px);
+}
+.util-btn:hover{border-color:var(--red);color:var(--white);background:rgba(211,20,39,0.1);}
+
+/* CLICK ZONES */
+.click-zone{position:fixed;top:0;bottom:0;width:14%;z-index:5;cursor:pointer;}
+.click-zone.left{left:0;}
+.click-zone.right{right:0;}
+
+/* OVERVIEW PANEL */
+.overview-overlay{
+  position:fixed;inset:0;z-index:60;background:rgba(6,6,8,0.94);backdrop-filter:blur(10px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .3s ease;
+}
+.overview-overlay.open{opacity:1;pointer-events:auto;}
+.overview-head{display:flex;align-items:center;gap:14px;margin-bottom:32px;}
+.overview-head h3{font-family:'Lexend',sans-serif;font-size:20px;font-weight:600;}
+.overview-head span{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
+.overview-grid{
+  display:grid;grid-template-columns:repeat(5,150px);gap:14px;max-width:92vw;max-height:70vh;overflow-y:auto;padding:6px;
+}
+.ov-item{
+  border:1px solid var(--line);background:var(--panel);aspect-ratio:16/10;
+  display:flex;flex-direction:column;justify-content:space-between;padding:12px;
+  cursor:pointer;transition:all .2s ease;position:relative;
+}
+.ov-item:hover{border-color:var(--red);transform:translateY(-3px);background:var(--panel-2);}
+.ov-item.current{border-color:var(--red-2);box-shadow:0 0 0 1px var(--red-2);}
+.ov-item .ov-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--red-2);}
+.ov-item .ov-title{font-size:11px;color:var(--white);line-height:1.35;font-weight:500;}
+.overview-close-hint{margin-top:26px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted-2);letter-spacing:0.06em;}
+
+/* SHORTCUTS HINT */
+.shortcuts-hint{
+  position:fixed;bottom:36px;left:50%;transform:translateX(-50%);z-index:20;
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted-2);
+  letter-spacing:0.04em;display:flex;gap:16px;opacity:0.7;transition:opacity .3s ease;
+}
+.shortcuts-hint b{color:var(--muted);}
+.shortcuts-hint.fade{opacity:0;}
+
+@media (max-width:900px){
+  .util-btns{left:16px;top:50%;transform:translateY(-50%);}
+  .overview-grid{grid-template-columns:repeat(2,44vw);}
+  .shortcuts-hint{display:none;}
+}
+
+/* GENERIC HELPERS */
+.title-xl{font-size:44px;line-height:1.08;max-width:820px;}
+.title-lg{font-size:36px;line-height:1.12;max-width:760px;}
+.subtitle{font-family:'Lexend',sans-serif;font-weight:400;color:var(--muted);font-size:17px;max-width:100%;margin-top:16px;line-height:1.55;}
+.red{color:var(--red-2);}
+.grid{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);}
+.card{background:var(--panel);padding:26px;transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;}
+.card:hover{transform:translateY(-5px) scale(1.015);border-color:var(--red);box-shadow:0 16px 34px rgba(0,0,0,0.4);}
+.card h4{font-family:'Lexend',sans-serif;font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:10px;}
+.card ul{list-style:none;font-size:13.5px;color:var(--muted);line-height:2;}
+.card ul li::before{content:'—';color:var(--red);margin-right:8px;}
+.icon-box{width:34px;height:34px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--red-2);flex-shrink:0;}
+.footer-tags{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);display:flex;gap:28px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted-2);}
+.footer-tags span{color:var(--red-2);}
+.content-row{display:flex;gap:60px;flex:1;align-items:center;margin-top:20px;}
+
+/* SLIDE BODY — intro + content share one uniform gap, whole group centered vertically */
+.slide-body{flex:1;display:flex;flex-direction:column;justify-content:center;}
+.slide-body > * + *{margin-top:32px;}
+.slide-body > .content-row{margin-top:32px;}
+
+/* SLIDE 1 VISUAL (HERO) */
+.s1-visual{position:absolute;inset:0;z-index:-1;}
+.s1-gradient{position:absolute;inset:0;background:
+  linear-gradient(100deg, #08080a 0%, #08080a 22%, rgba(8,8,10,0.88) 34%, rgba(8,8,10,0.55) 46%, rgba(8,8,10,0.15) 60%, transparent 74%),
+  linear-gradient(0deg, rgba(6,6,8,0.75) 0%, rgba(6,6,8,0.15) 30%, transparent 55%);}
+.s1-water{position:absolute;bottom:0;left:0;right:0;height:30%;
+  background:linear-gradient(180deg, transparent, rgba(8,8,10,0.55) 70%, rgba(8,8,10,0.92));
+}
+.s1-content{margin-top:auto;margin-bottom:auto;}
+.s1-tag{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:var(--red-2);margin-bottom:22px;}
+.s1-title{font-size:56px;line-height:1.08;font-weight:500;max-width:900px;}
+.s1-sub{font-size:19px;color:var(--muted);margin-top:20px;font-family:'Lexend',sans-serif;font-weight:500;}
+.s1-pillars{display:flex;gap:0;margin-top:44px;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);}
+.s1-pillars span{padding:0 20px;border-left:1px solid var(--line);}
+.s1-pillars span:first-child{padding-left:0;border-left:none;}
+.s1-pillars b{color:var(--red-2);}
+.s1-logo{position:absolute;bottom:118px;right:88px;text-align:right;font-family:'Lexend',sans-serif;font-weight:800;font-size:22px;}
+.s1-logo small{display:block;font-family:'Lexend',sans-serif;font-weight:400;font-size:11px;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase;margin-top:2px;}
+
+/* SLIDE 1 — TWO-COLUMN VARIANT (text + contained photo, no crop) */
+.s1-row{flex:1;display:flex;align-items:center;gap:72px;}
+.s1-row .s1-content{margin:0;flex:1;}
+.s1-photo{flex-shrink:0;height:min(82vh,780px);}
+.s1-photo img{height:100%;width:auto;display:block;}
+.s1-credit{margin-top:40px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);line-height:1.9;}
+.s1-credit b{display:block;color:var(--white);font-family:'Lexend',sans-serif;font-size:15px;font-weight:600;margin:4px 0 2px;letter-spacing:0;text-transform:none;}
+.s1-credit small{display:block;letter-spacing:0.02em;}
+@media (max-width:900px){
+  .s1-row{flex-direction:column-reverse;gap:32px;}
+  .s1-photo{height:34vh;}
+}
+
+/* SIDE VISUAL (left-bottom) */
+.s9-visual{position:absolute;left:0;bottom:0;width:34%;height:50%;z-index:-1;overflow:hidden;}
+.s9-visual img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:60% 35%;}
+.s9-gradient{position:absolute;inset:0;background:
+  linear-gradient(180deg, #08080a 0%, rgba(8,8,10,0) 42%),
+  linear-gradient(90deg, rgba(8,8,10,0) 55%, #08080a 100%);}
+
+/* SIDE VISUAL (right-bottom) */
+.s13-visual{position:absolute;right:0;bottom:0;width:32%;height:52%;z-index:-1;overflow:hidden;}
+.s13-visual img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;}
+.s13-gradient{position:absolute;inset:0;background:
+  linear-gradient(180deg, #08080a 0%, rgba(8,8,10,0) 42%),
+  linear-gradient(270deg, rgba(8,8,10,0) 55%, #08080a 100%);}
+
+/* ECOSYSTEM / TEAM DIAGRAM */
+.orbit-wrap{position:relative;width:560px;height:560px;flex-shrink:0;margin:0 auto;}
+.orbit-center{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:150px;height:150px;border-radius:50%;
+  border:1px solid var(--red);
+  display:flex;align-items:center;justify-content:center;
+  text-align:center;font-family:'Lexend',sans-serif;font-weight:700;font-size:18px;
+  background:radial-gradient(circle, rgba(211,20,39,0.12), rgba(8,8,10,0.4));
+  box-shadow:0 0 60px rgba(211,20,39,0.25), inset 0 0 30px rgba(211,20,39,0.15);
+  z-index:3;
+  line-height:1.25;
+  animation:hubPulse 3.6s ease-in-out infinite;
+}
+@keyframes hubPulse{
+  0%,100%{box-shadow:0 0 60px rgba(211,20,39,0.25), inset 0 0 30px rgba(211,20,39,0.15);}
+  50%{box-shadow:0 0 84px rgba(211,20,39,0.4), inset 0 0 36px rgba(211,20,39,0.22);}
+}
+.orbit-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border:1px solid var(--line);border-radius:50%;}
+.orbit-ring.r1{width:300px;height:300px;}
+.orbit-ring.r2{width:460px;height:460px;border-style:dashed;border-color:rgba(211,20,39,0.15);}
+.orbit-node{
+  position:absolute;width:130px;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  text-align:center;font-size:11.5px;color:var(--muted);
+  font-family:'JetBrains Mono',monospace;letter-spacing:0.03em;
+  cursor:default;z-index:4;
+  transition:transform .35s cubic-bezier(.22,.9,.32,1);
+}
+.orbit-node .node-icon{
+  width:58px;height:58px;border-radius:50%;border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;color:var(--red-2);
+  background:var(--bg-soft);
+  transition:all .35s cubic-bezier(.22,.9,.32,1);
+}
+.orbit-node .node-icon svg{width:26px;height:26px;}
+.orbit-node b{color:var(--white);font-family:'Lexend',sans-serif;font-weight:600;font-size:14.5px;letter-spacing:0;text-transform:none;transition:color .3s ease;line-height:1.3;}
+.orbit-node:hover{transform:translateY(-6px);}
+.orbit-node:hover .node-icon{
+  border-color:var(--red);color:#fff;background:rgba(211,20,39,0.22);
+  transform:scale(1.16);
+  box-shadow:0 0 28px rgba(211,20,39,0.55), 0 0 0 4px rgba(211,20,39,0.1);
+}
+.orbit-node:hover b{color:var(--red-2);}
+.orbit-line{
+  position:absolute;top:50%;left:50%;height:1.5px;
+  background:linear-gradient(90deg, rgba(211,20,39,0.9), rgba(211,20,39,0));
+  transform-origin:0 50%;
+  opacity:0;width:0;
+  transition:opacity .35s ease, width .45s cubic-bezier(.22,.9,.32,1);
+  pointer-events:none;z-index:2;
+}
+.orbit-line.on{opacity:1;}
+
+/* TABLE (compare) */
+.compare-table{border:1px solid var(--line);width:100%;}
+.compare-row{display:grid;grid-template-columns:1fr 1fr;}
+.compare-row > div{padding:22px 32px;font-size:17px;border-bottom:1px solid var(--line);}
+.compare-row.head > div{font-family:'Lexend',sans-serif;font-weight:700;font-size:15px;letter-spacing:0.06em;text-transform:uppercase;background:var(--panel-2);padding:20px 32px;}
+.compare-row.head div:first-child{color:var(--muted);}
+.compare-row.head div:last-child{color:var(--red-2);}
+.compare-row div:first-child{color:var(--muted-2);border-right:1px solid var(--line);}
+.compare-row div:last-child{color:var(--white);font-weight:600;background:rgba(211,20,39,0.05);}
+.compare-row:nth-child(even){background:rgba(255,255,255,0.015);}
+.compare-row:last-child > div{border-bottom:none;}
+
+/* DATA TABLE (variable columns) */
+.data-table{border:1px solid var(--line);width:100%;}
+.data-row{display:grid;}
+.data-row>div{padding:15px 22px;font-size:13px;line-height:1.45;border-bottom:1px solid var(--line);border-right:1px solid var(--line);color:var(--white);position:relative;transition:background .2s ease;}
+.data-row>div:last-child{border-right:none;}
+.data-row.head{background:var(--panel-2);}
+.data-row.head>div{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);}
+.data-row:nth-child(even):not(.head){background:rgba(255,255,255,0.015);}
+.data-row:last-child>div{border-bottom:none;}
+.data-row.total>div{background:rgba(211,20,39,0.1);color:var(--red-2);font-weight:700;}
+.data-row:not(.head):hover>div{background:rgba(211,20,39,0.12);}
+.data-row.total:hover>div{background:rgba(211,20,39,0.2);}
+.data-row:not(.head):hover>div:first-child::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--red);}
+
+/* MINI FLOW (process boxes) */
+.mini-flow{display:flex;align-items:center;flex-wrap:wrap;gap:0;width:100%;}
+.mini-flow .mf-box{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:15px 18px;min-width:130px;text-align:center;transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease, background .25s ease;}
+.mini-flow .mf-box:hover{border-color:var(--red);transform:translateY(-5px);box-shadow:0 14px 30px rgba(0,0,0,0.4);background:rgba(211,20,39,0.08);}
+.mini-flow .mf-box b{display:block;font-size:12.5px;color:var(--white);font-family:'Lexend',sans-serif;font-weight:600;margin-bottom:4px;}
+.mini-flow .mf-box span{font-size:10px;color:var(--muted-2);font-family:'JetBrains Mono',monospace;letter-spacing:0.02em;}
+.mini-flow .mf-box.hl{border-color:var(--red);background:rgba(211,20,39,0.08);}
+.mini-flow .mf-arrow{color:var(--red-2);font-size:15px;padding:0 12px;flex-shrink:0;}
+.mini-flow.dense{flex-wrap:nowrap;}
+.mini-flow.dense .mf-box{min-width:0;flex:1;padding:26px 18px;}
+.mini-flow.dense .mf-box b{font-size:17px;margin-bottom:8px;}
+.mini-flow.dense .mf-box span{font-size:12.5px;}
+.mini-flow.dense .mf-arrow{padding:0 16px;font-size:20px;}
+.mini-flow.lg{gap:0;}
+.mini-flow.lg .mf-box{padding:24px 22px;min-width:0;flex:1;}
+.mini-flow.lg .mf-box b{font-size:16px;}
+.mini-flow.lg .mf-arrow{font-size:20px;padding:0 18px;}
+
+/* FLOW CARDS — connected steps with detail (icon + bullets) */
+.flow-cards{display:flex;align-items:stretch;gap:0;width:100%;}
+.flow-cards .fc{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:26px 22px;transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;}
+.flow-cards .fc:hover{transform:translateY(-4px);border-color:var(--red);box-shadow:0 16px 34px rgba(0,0,0,0.4);}
+.flow-cards .fc.hl{border-color:var(--red);background:linear-gradient(180deg, rgba(211,20,39,0.08), var(--panel));}
+.flow-cards .fc .fi{width:40px;height:40px;border-radius:8px;border:1px solid rgba(211,20,39,0.5);background:rgba(211,20,39,0.13);color:var(--red-2);display:flex;align-items:center;justify-content:center;margin-bottom:16px;}
+.flow-cards .fc h4{font-size:14px;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.02em;}
+.flow-cards .fc ul{list-style:none;font-size:12.5px;color:var(--muted);line-height:1.9;}
+.flow-cards .fc ul li::before{content:'—';color:var(--red);margin-right:6px;}
+.flow-cards .fc-arrow{display:flex;align-items:center;color:var(--red-2);font-size:18px;padding:0 14px;flex-shrink:0;}
+
+/* PILLARS / GRIDS 3-4 COL */
+.pillars3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;width:100%;}
+.pillars3 .p{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.14);border-radius:10px;padding:32px 28px;transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;}
+.pillars3 .p:hover{transform:translateY(-5px) scale(1.015);border-color:var(--red);box-shadow:0 16px 34px rgba(0,0,0,0.4);}
+.pillars3 .p .pi{width:52px;height:52px;border-radius:10px;border:1px solid rgba(211,20,39,0.5);background:rgba(211,20,39,0.13);color:var(--red-2);display:flex;align-items:center;justify-content:center;margin-bottom:20px;}
+.pillars3 .p h4{font-size:18px;margin-bottom:16px;text-transform:uppercase;letter-spacing:0.02em;}
+.pillars3 .p ul{list-style:none;font-size:13.5px;color:var(--muted);line-height:2.1;}
+.pillars3 .p ul li::before{content:'—';color:var(--red);margin-right:8px;}
+
+/* KPI badges */
+.kpi-box{border:1px solid var(--red);background:rgba(211,20,39,0.05);padding:32px 34px;width:100%;border-radius:10px;}
+.kpi-box h5{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:var(--red-2);margin-bottom:22px;}
+.kpi-grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+.kpi-grid2 .kt{border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:18px 20px;background:rgba(255,255,255,0.02);transition:transform .25s ease, border-color .25s ease;}
+.kpi-grid2 .kt:hover{transform:translateY(-4px) scale(1.015);border-color:var(--red);}
+.kpi-grid2 .kt b{display:flex;align-items:center;gap:9px;font-size:16px;color:var(--white);font-weight:600;}
+.kpi-grid2 .kt b::before{content:'▲';color:var(--red);font-size:11px;}
+.kpi-grid2 .kt.full{grid-column:span 2;}
+.flow-steps{display:flex;flex-direction:column;gap:22px;}
+.flow-steps .step{display:flex;align-items:center;gap:20px;}
+.flow-steps .step .fi{width:54px;height:54px;border-radius:50%;border:1px solid var(--red);color:var(--red-2);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(211,20,39,0.08);}
+.flow-steps .step .ft b{display:block;font-size:17px;font-weight:600;color:var(--white);}
+.flow-steps .step .ft span{font-size:13.5px;color:var(--muted-2);}
+.flow-steps .flow-arrow{position:relative;width:54px;height:26px;display:flex;align-items:center;justify-content:center;}
+.flow-steps .flow-arrow::before{content:'';position:absolute;top:-4px;bottom:-4px;left:50%;width:1px;background:rgba(211,20,39,0.4);transform:translateX(-50%);}
+.flow-steps .flow-arrow span{position:relative;color:var(--red);font-size:13px;line-height:1;background:var(--bg);padding:6px 0;}
+
+/* GRID OUTLINE / PILL cards */
+.grid-outline{background:none!important;border:none!important;gap:24px!important;box-shadow:none;}
+.grid-outline .card{background:transparent;border:1px solid rgba(255,255,255,0.55);border-radius:10px;padding:40px 16px;}
+.grid-outline .card:hover{border-color:var(--red);}
+.grid-outline .icon-box{background:transparent;border-color:rgba(211,20,39,0.55);}
+.grid-outline .card-label{text-transform:uppercase;font-size:15px;font-weight:600;letter-spacing:0.04em;color:var(--white);}
+.grid-outline.pill{gap:16px!important;}
+.grid-outline.pill .card{display:flex;align-items:center;gap:14px;padding:20px 20px;background:rgba(255,255,255,0.04);}
+.grid-outline.pill .icon-box{width:42px;height:42px;border-radius:50%;background:rgba(211,20,39,0.16);border-color:rgba(211,20,39,0.5);margin:0;flex-shrink:0;}
+.grid-outline.pill .card-label{font-size:13px;letter-spacing:0.02em;text-align:left;}
+.grid-outline .card.bad{border-color:rgba(211,20,39,0.4);}
+.grid-outline .card.bad .icon-box{border-color:rgba(211,20,39,0.7);color:var(--red-2);}
+.grid-outline .card.featured{border-color:var(--red);background:linear-gradient(180deg, rgba(211,20,39,0.1), var(--panel));}
+.grid-outline .card.featured .icon-box{border-color:rgba(211,20,39,0.7);color:var(--red-2);}
+.card-star{position:absolute;top:14px;right:16px;color:var(--red-2);font-size:15px;}
+
+/* TIMELINE (quarters / phases) */
+.timeline11{width:100%;}
+.tl-row{display:grid;grid-template-columns:repeat(var(--tl-cols,4),1fr);position:relative;}
+.tl-row::before{content:'';position:absolute;left:27px;right:calc(100% / var(--tl-cols,4) - 27px);top:27px;height:1px;background:rgba(255,255,255,0.16);}
+.tl-row::after{content:'▸';position:absolute;right:calc(100% / var(--tl-cols,4) - 27px);top:27px;transform:translate(50%,-52%);color:rgba(255,255,255,0.3);font-size:14px;}
+.tl-row .ic-wrap{display:flex;justify-content:flex-start;position:relative;z-index:1;}
+.tl-row .ic-wrap{cursor:pointer;}
+.tl-row .ic{width:54px;height:54px;border-radius:50%;border:1px solid var(--red);background:var(--bg);color:var(--red-2);display:flex;align-items:center;justify-content:center;transition:transform .3s cubic-bezier(.22,.9,.32,1), box-shadow .3s ease, background .3s ease;}
+.tl-row .ic-wrap.q-active .ic{transform:scale(1.18);box-shadow:0 0 26px rgba(211,20,39,0.55);background:rgba(211,20,39,0.12);}
+.tl-row .ic-wrap.optional .ic{border-color:rgba(255,255,255,0.3);border-style:dashed;color:var(--muted);opacity:0.7;}
+.tl-row .ic-wrap.optional.q-active .ic{transform:scale(1.12);box-shadow:0 0 22px rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);opacity:1;border-color:rgba(255,255,255,0.5);}
+.qsteps{display:grid;grid-template-columns:repeat(var(--tl-cols,4),1fr);width:100%;margin-top:24px;}
+.qsteps .q{padding:0 22px;border-left:1px solid var(--line);cursor:pointer;transition:transform .3s cubic-bezier(.22,.9,.32,1);}
+.qsteps .q.q-active{transform:translateY(-4px);}
+.qsteps .q.q-active b.tag{color:#fff;}
+.qsteps .q.q-active h4{color:var(--red-2);}
+.qsteps .q:first-child{border-left:none;padding-left:0;}
+.qsteps .q b.tag{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red-2);letter-spacing:0.1em;text-transform:uppercase;display:block;transition:color .3s ease;}
+.qsteps .q h4{margin:10px 0 6px;font-size:19px;text-transform:uppercase;letter-spacing:0.01em;line-height:1.25;transition:color .3s ease;}
+.qsteps .q p{font-size:12.5px;color:var(--muted);line-height:1.5;}
+.qsteps .q.optional{opacity:0.6;transition:opacity .3s ease, transform .3s ease;}
+.qsteps .q.optional b.tag{color:var(--muted-2);}
+.qsteps .q.optional h4{color:var(--muted);}
+.qsteps .q.optional.q-active{opacity:1;}
+.qsteps .q.optional.q-active b.tag{color:var(--muted-2);}
+.qsteps .q.optional.q-active h4{color:var(--white);}
+
+/* pricing tiers */
+.pricing{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;width:100%;max-width:980px;}
+.tier{display:flex;flex-direction:column;border:1px solid rgba(255,255,255,0.55);border-radius:10px;padding:24px 24px;background:var(--panel);position:relative;transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;}
+.tier:hover{transform:translateY(-5px) scale(1.015);border-color:var(--red);box-shadow:0 16px 34px rgba(0,0,0,0.4);}
+.tier.reco{border-color:var(--red);background:linear-gradient(180deg, rgba(211,20,39,0.08), var(--panel));}
+.tier .badge{position:absolute;top:-13px;left:24px;background:var(--red);color:#fff;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:4px 10px;}
+.tier .icon-box{width:40px;height:40px;border-radius:50%;border:1px solid rgba(211,20,39,0.5);background:rgba(211,20,39,0.13);color:var(--red-2);display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
+.tier h4{font-size:16px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;font-weight:500;}
+.tier .hrs{font-family:'Lexend',sans-serif;font-size:26px;font-weight:700;margin:8px 0 14px;}
+.tier ul{list-style:none;font-size:13px;color:var(--muted);line-height:1.85;margin-bottom:14px;flex:1;}
+.tier ul li::before{content:'—';color:var(--red);margin-right:8px;}
+.tier .foot{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted-2);border-top:1px solid var(--line);padding-top:12px;margin-top:auto;}
+.tier.reco .foot{color:var(--red-2);}
+
+/* investment cards */
+.invest-price{font-family:'Lexend',sans-serif;font-size:40px;font-weight:800;color:var(--red-2);}
+.invest-price span{font-size:16px;color:var(--muted);font-family:'Lexend',sans-serif;font-weight:400;}
+.invest-price .note{display:block;font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;}
+.mono-label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;}
+
+/* checklist */
+.checklist{list-style:none;font-size:15px;line-height:2.4;}
+.mock-frame{max-height:48vh;display:flex;}
+.mock-frame img{max-width:100%;max-height:48vh;width:auto;height:auto;display:block;border-radius:16px;
+  -webkit-mask-image:radial-gradient(ellipse 76% 80% at center, #000 60%, transparent 100%);
+  mask-image:radial-gradient(ellipse 76% 80% at center, #000 60%, transparent 100%);
+  filter:drop-shadow(0 20px 45px rgba(0,0,0,0.5));}
+.checklist li{display:flex;align-items:center;gap:12px;color:var(--white);}
+.checklist li::before{content:'✓';width:20px;height:20px;border-radius:50%;background:rgba(61,220,132,0.15);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+.checklist.lg{font-size:21px;font-weight:500;line-height:1;}
+.checklist.lg li{gap:18px;margin-bottom:26px;}
+.checklist.lg li:last-child{margin-bottom:0;}
+.checklist.lg li::before{width:32px;height:32px;font-size:15px;}
+.checklist.bad li::before{content:'✕';background:rgba(211,20,39,0.15);color:var(--red-2);}
+
+/* media gallery */
+.gallery9{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(2,1fr);gap:10px;width:100%;height:44vh;}
+.gallery9 .tile,.gallery5 .tile{position:relative;border-radius:8px;overflow:hidden;display:flex;align-items:flex-end;border:1px solid rgba(255,255,255,0.08);transition:transform .25s ease, border-color .25s ease;}
+.gallery9 .tile:hover,.gallery5 .tile:hover{transform:scale(1.03);border-color:var(--red);z-index:2;}
+.gallery9 .tile.big,.gallery5 .tile.big{grid-column:span 2;grid-row:span 2;}
+.gallery9 .tile.tall,.gallery5 .tile.tall{grid-row:span 2;}
+.gallery9 .tile img,.gallery5 .tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.gallery9 .tile .tile-shade,.gallery5 .tile .tile-shade{position:absolute;inset:0;background:linear-gradient(0deg, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.1) 50%, transparent 72%);}
+.gallery9 .tile .tile-cap,.gallery5 .tile .tile-cap{position:relative;z-index:2;padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#fff;}
+.gallery9 .tile[data-video],.gallery5 .tile[data-video]{cursor:pointer;}
+.gallery9 .tile-play,.gallery5 .tile-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;z-index:2;backdrop-filter:blur(4px);transition:all .25s ease;}
+.gallery9 .tile[data-video]:hover .tile-play,.gallery5 .tile[data-video]:hover .tile-play{background:var(--red);border-color:var(--red);transform:translate(-50%,-50%) scale(1.08);}
+.gallery5{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,1fr);gap:10px;width:100%;height:44vh;}
+
+/* VIDEO MODAL */
+.video-modal{position:fixed;inset:0;z-index:80;background:rgba(4,4,6,0.96);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s ease;}
+.video-modal.open{opacity:1;pointer-events:auto;}
+.video-modal video{max-width:88vw;max-height:82vh;border-radius:8px;box-shadow:0 30px 80px rgba(0,0,0,0.6);}
+.video-modal-close{position:absolute;top:36px;right:44px;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,0.04);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .25s ease;}
+.video-modal-close:hover{border-color:var(--red);background:rgba(211,20,39,0.15);}
+
+/* two-column duo cards */
+.duo-wrap{display:flex;align-items:stretch;gap:32px;width:100%;}
+.duo-col{flex:1;border:1px solid var(--line);border-radius:10px;padding:30px 30px;background:var(--panel);transition:transform .25s ease, border-color .25s ease;}
+.duo-col:hover{transform:translateY(-4px);border-color:var(--red);}
+.duo-col h4{font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;color:var(--red-2);margin-bottom:20px;}
+.duo-col ul{list-style:none;font-size:14.5px;color:var(--white);line-height:2.1;}
+.duo-col ul li::before{content:'—';color:var(--red);margin-right:10px;}
+
+/* numbered principles */
+.principles-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;width:100%;max-width:920px;}
+.principle{display:flex;gap:22px;align-items:flex-start;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.14);border-radius:10px;padding:28px 26px;transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;}
+.principle:hover{transform:translateY(-5px) scale(1.015);border-color:var(--red);box-shadow:0 16px 34px rgba(0,0,0,0.4);}
+.principle .pn{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:600;color:var(--red-2);flex-shrink:0;line-height:1.1;opacity:0.85;}
+.principle h4{font-size:15.5px;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.02em;}
+.principle p{font-size:13px;color:var(--muted);line-height:1.6;}
+
+/* before / after horizontal flow */
+.flow-h-block{margin-bottom:34px;}
+.flow-h-block:last-child{margin-bottom:0;}
+.flow-h-label{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;}
+.flow-h-label.after{color:var(--red-2);}
+.flow-h-row{display:flex;align-items:center;flex-wrap:wrap;gap:0;}
+.flow-h-row .fh-step{font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:0.03em;text-transform:uppercase;color:var(--white);border:1px solid rgba(255,255,255,0.18);padding:13px 20px;border-radius:30px;background:var(--panel);white-space:nowrap;}
+.flow-h-block.after .fh-step{border-color:rgba(211,20,39,0.5);background:rgba(211,20,39,0.06);}
+.flow-h-row .fh-arrow{color:var(--red-2);font-size:16px;padding:0 12px;flex-shrink:0;}
+
+/* legal terms grid */
+.terms-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;width:100%;}
+.term{border:1px solid var(--line);border-radius:8px;padding:18px 20px;background:rgba(255,255,255,0.02);}
+.term .tn{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--red-2);letter-spacing:0.06em;margin-bottom:6px;}
+.term h4{font-size:13.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.01em;margin-bottom:6px;color:var(--white);}
+.term p{font-size:12px;color:var(--muted);line-height:1.6;}
+
+/* note box */
+.note-box{border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.03);border-radius:10px;padding:20px 24px;max-width:640px;}
+.note-box .nb-label{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--red-2);margin-bottom:10px;}
+.note-box p{font-size:12.5px;color:var(--muted);line-height:1.7;margin-bottom:6px;}
+.note-box p:last-child{margin-bottom:0;}
+
+.emphasis-line{color:var(--red-2);text-transform:uppercase;font-weight:700;font-size:24px;letter-spacing:0.01em;line-height:1.3;max-width:520px;font-family:'Lexend',sans-serif;}
+
+/* closing slide */
+.s19-title{font-size:50px;line-height:1.1;font-weight:500;max-width:900px;}
+.s19{justify-content:center;align-items:center;text-align:center;}
+.s19 .subtitle{margin:24px auto 0;text-align:center;}
+.s19-logo{margin-top:70px;font-family:'Lexend',sans-serif;font-weight:800;font-size:26px;}
+.s19-contact{margin-top:26px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted);letter-spacing:0.04em;display:flex;gap:20px;justify-content:center;flex-wrap:wrap;}
+.s19-contact span{color:var(--red-2);}
+.s19-copy{margin-top:18px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted-2);letter-spacing:0.06em;}
+
+/* SCHEMA ENTRANCE ANIMATION — boxes/arrows reveal in sequence when the slide becomes active */
+@keyframes flowIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.mini-flow>*,.flow-cards>*,.flow-h-row>*,.tl-row>.ic-wrap,.qsteps>.q{opacity:0;}
+.slide.active .mini-flow>*,.slide.active .flow-cards>*,.slide.active .flow-h-row>*,.slide.active .tl-row>.ic-wrap,.slide.active .qsteps>.q{animation:flowIn .45s cubic-bezier(.22,.9,.32,1) forwards;}
+.mini-flow>*:nth-child(1),.flow-cards>*:nth-child(1),.flow-h-row>*:nth-child(1),.tl-row>.ic-wrap:nth-child(1),.qsteps>.q:nth-child(1){animation-delay:.22s;}
+.mini-flow>*:nth-child(2),.flow-cards>*:nth-child(2),.flow-h-row>*:nth-child(2),.tl-row>.ic-wrap:nth-child(2),.qsteps>.q:nth-child(2){animation-delay:.28s;}
+.mini-flow>*:nth-child(3),.flow-cards>*:nth-child(3),.flow-h-row>*:nth-child(3),.tl-row>.ic-wrap:nth-child(3),.qsteps>.q:nth-child(3){animation-delay:.34s;}
+.mini-flow>*:nth-child(4),.flow-cards>*:nth-child(4),.flow-h-row>*:nth-child(4),.tl-row>.ic-wrap:nth-child(4),.qsteps>.q:nth-child(4){animation-delay:.40s;}
+.mini-flow>*:nth-child(5),.flow-cards>*:nth-child(5),.flow-h-row>*:nth-child(5),.tl-row>.ic-wrap:nth-child(5),.qsteps>.q:nth-child(5){animation-delay:.46s;}
+.mini-flow>*:nth-child(6),.flow-cards>*:nth-child(6),.flow-h-row>*:nth-child(6){animation-delay:.52s;}
+.mini-flow>*:nth-child(7),.flow-cards>*:nth-child(7),.flow-h-row>*:nth-child(7){animation-delay:.58s;}
+.mini-flow>*:nth-child(8),.flow-h-row>*:nth-child(8){animation-delay:.64s;}
+.mini-flow>*:nth-child(9),.flow-h-row>*:nth-child(9){animation-delay:.70s;}
+.mini-flow>*:nth-child(10){animation-delay:.76s;}
+.mini-flow>*:nth-child(11){animation-delay:.82s;}
+
+@media (prefers-reduced-motion: reduce){
+  .orbit-center{animation:none;}
+  #nextBtn .arrow-ic,#prevBtn .arrow-ic{animation:none;}
+  .slide{transition:opacity .3s ease;}
+  .mini-flow>*,.flow-cards>*,.flow-h-row>*,.tl-row>.ic-wrap,.qsteps>.q{opacity:1;animation:none;transform:none;}
+}
+@media (max-width:900px){
+  .slide{padding:32px 24px;}
+  .title-xl,.s1-title{font-size:34px;}
+  .pillars3,.qsteps,.grid-outline,.pricing,.principles-grid,.terms-grid,.duo-wrap,.gallery5{grid-template-columns:1fr;}
+  .duo-wrap{flex-direction:column;}
+  .content-row{flex-direction:column;align-items:flex-start;}
+  .orbit-wrap{transform:scale(0.6);}
+  .counter,.arrows{left:24px;right:24px;}
+  .data-row{grid-template-columns:1fr!important;}
+  .mini-flow{flex-direction:column;align-items:stretch;}
+  .mini-flow .mf-arrow{transform:rotate(90deg);padding:8px 0;}
+  .flow-cards{flex-direction:column;align-items:stretch;}
+  .flow-cards .fc-arrow{transform:rotate(90deg);padding:10px 0;}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div id="grain"></div>
+
+<svg width="0" height="0" style="position:absolute;overflow:hidden;">
+  <defs>
+    <symbol id="digiup-logo" viewBox="0 0 1127.8 615.17">
+      <rect x="266.57" y="246.07" width="61.52" height="246.06"/>
+      <rect x="615.16" y="246.07" width="61.52" height="246.06"/>
+      <path d="M1127.79,123.04c0,67.95-55.08,123.03-123.03,123.03v-61.52c33.98,0,61.52-27.54,61.52-61.52s-27.53-61.52-61.52-61.52-61.52,27.54-61.52,61.52v246.06c0,67.95-55.08,123.03-123.03,123.03s-123.03-55.08-123.03-123.03v-123.03h61.52v123.03c0,33.97,27.55,61.52,61.52,61.52s61.52-27.54,61.52-61.52V123.03c0-67.95,55.09-123.03,123.03-123.03s123.03,55.08,123.03,123.03h-.01Z"/>
+      <path d="M471.63,246.07c-67.94,0-123.03,55.08-123.03,123.03,0,22.41,5.99,43.41,16.46,61.52,11.18,19.32,27.45,35.31,46.99,46.14,17.65,9.81,37.97,15.38,59.58,15.38s41.92-5.57,59.58-15.37h0c19.54-10.83,35.82-26.83,46.99-46.15,10.47-18.1,16.46-39.11,16.46-61.52,0-67.95-55.08-123.03-123.03-123.03h0ZM471.63,430.62c-28.66,0-52.74-19.61-59.58-46.14-1.26-4.91-1.94-10.07-1.94-15.38,0-33.97,27.55-61.52,61.52-61.52s61.52,27.54,61.52,61.52c0,5.31-.67,10.46-1.94,15.37h0c-6.84,26.54-30.91,46.15-59.58,46.15h0Z"/>
+      <path d="M594.66,492.14c0,31.51-11.85,60.25-31.33,82.02-22.53,25.18-55.26,41.01-91.7,41.01s-69.17-15.84-91.69-41.01c-19.49-21.77-31.34-50.51-31.34-82.02h61.52c0,33.97,27.55,61.52,61.52,61.52s61.52-27.54,61.52-61.52h61.52-.02Z"/>
+      <path d="M184.55,164.05v98.48c-18.1-10.47-39.11-16.46-61.52-16.46C55.09,246.07,0,301.15,0,369.1s55.09,123.03,123.03,123.03c22.41,0,43.41-5.99,61.52-16.46v16.46h61.52V164.05h-61.52ZM123.04,430.62c-33.97,0-61.52-27.54-61.52-61.52s27.55-61.52,61.52-61.52,61.52,27.54,61.52,61.52-27.53,61.52-61.52,61.52Z"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+<div class="deck" id="deck">
+
+<!-- SLIDE — CAPA -->
+<section class="slide" data-title="Digitalização e Automação de Processos — O Cruzeiro das Francesinhas">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="s1-row">
+    <div class="s1-content">
+      <div class="s1-tag">Proposta de Projeto</div>
+      <h1 class="s1-title">Digitalização e Automação<br>de Processos</h1>
+      <div class="s1-sub">O Cruzeiro das Francesinhas</div>
+      <div class="s1-pillars">
+        <span><b>Reservas &amp; CRM</b></span>
+        <span><b>Inventário &amp; Stocks</b></span>
+        <span><b>Monitorização de Compras</b></span>
+        <span><b>Gestão &amp; BI</b></span>
+      </div>
+      <div class="s1-credit">
+        <small>Apresentado por</small>
+        <b>João Nascimento</b>
+        <small>CTO &amp; Co-CEO, digiUP — Digiruptiva, Lda.</small>
+        <small>Agosto de 2026</small>
+      </div>
+    </div>
+    <div class="s1-photo">
+      <img src="resources/images/hero-fundadores.png" alt="">
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE — RESUMO EXECUTIVO -->
+<section class="slide" data-title="Resumo Executivo">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Resumo Executivo</div>
+      <h2 class="title-lg">Arrumar a casa antes de crescer.</h2>
+      <p class="subtitle">O Cruzeiro das Francesinhas prepara-se para expandir para novos espaços. Antes disso, propomos organizar e automatizar os processos internos que hoje dependem de controlo manual — reservas, stocks e compras — para que o crescimento seja feito com dados e critério, não apenas intuição.</p>
+      <p class="subtitle">A proposta está organizada em quatro eixos — Reservas &amp; CRM, Inventário &amp; Stocks, Monitorização de Preços de Compra e Gestão &amp; BI.</p>
+    </div>
+    <div style="max-width:900px;">
+      <div class="flow-h-block">
+        <div class="flow-h-label">Núcleo do Projeto · 5 a 7 Meses de Calendário</div>
+        <div class="flow-h-row">
+          <span class="fh-step">Fase 0</span><span class="fh-arrow">→</span>
+          <span class="fh-step">Fase 1</span><span class="fh-arrow">→</span>
+          <span class="fh-step">Fase 2</span><span class="fh-arrow">→</span>
+          <span class="fh-step">Fase 3</span><span class="fh-arrow">→</span>
+          <span class="fh-step">Fase 4</span>
+        </div>
+      </div>
+      <div class="flow-h-block after">
+        <div class="flow-h-label after">Evolução Opcional</div>
+        <div class="flow-h-row">
+          <span class="fh-step">Fase 5 — Addons de Atendimento (WhatsApp · Instagram · Voz)</span>
+        </div>
+      </div>
+    </div>
+    <p class="emphasis-line" style="margin-left:auto;margin-right:auto;text-align:center;max-width:none;font-size:16px;">O investimento detalhado por fase é apresentado ao longo desta proposta.</p>
+  </div>
+</section>
+
+<!-- SLIDE — ENQUADRAMENTO -->
+<section class="slide" data-title="Enquadramento e Objetivo">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Enquadramento e Objetivo</div>
+      <h2 class="title-lg">Dois espaços, um processo manual.</h2>
+      <p class="subtitle">O Cruzeiro das Francesinhas opera atualmente dois espaços comerciais e iniciou um processo de reflexão estratégica sobre o seu crescimento. Antes de expandir, a gestão reconhece a necessidade de "arrumar a casa": hoje os processos de reserva, compras e stock dependem sobretudo de contacto direto e controlo manual, o que dificulta ter uma visão consolidada do negócio.</p>
+    </div>
+    <div class="grid grid-outline" style="grid-template-columns:repeat(4,1fr);width:100%;" id="grid-eixos"></div>
+  </div>
+</section>
+
+<!-- SLIDE — PORQUÊ A DIGIUP -->
+<section class="slide" data-title="Porquê a digiUP">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Porquê a digiUP</div>
+      <h2 class="title-lg">Porquê a digiUP.</h2>
+      <p class="subtitle">Agência digital portuguesa, especialista em projetos com muita personalização, com uma equipa experimentada e sénior que acompanha cada projeto de forma próxima — sem camadas de gestão intermédia entre a equipa técnica e o cliente.</p>
+    </div>
+    <ul class="checklist" style="width:100%;font-size:16px;">
+      <li>Experiência consolidada em plataformas de gestão à medida (Laravel + React/Next.js) — reservas, CRM, inventário e faturação</li>
+      <li>Experiência direta na construção de motores de agendamento e confirmação em tempo real</li>
+      <li>Trabalho recorrente em segurança e robustez de infraestrutura — hardening, monitorização e resposta a incidentes</li>
+      <li>Acompanhamento direto por elementos séniores, do desenho da solução ao lançamento</li>
+    </ul>
+  </div>
+</section>
+
+<!-- SLIDE — EIXO 1: DESAFIO & SOLUÇÃO -->
+<section class="slide" data-title="Eixo 1 — Landing Page, Reservas e CRM">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Eixo 1</div>
+      <h2 class="title-lg">Landing Page, Reservas e CRM.</h2>
+    </div>
+    <div class="duo-wrap">
+      <div class="duo-col">
+        <h4>O Desafio</h4>
+        <ul>
+          <li>Reservas dependem de contacto direto (telefone, redes sociais)</li>
+          <li>Sem visão consolidada do histórico de cada cliente</li>
+          <li>Sem visibilidade da taxa de no-show por espaço</li>
+        </ul>
+      </div>
+      <div class="duo-col">
+        <h4>A Solução Proposta</h4>
+        <ul>
+          <li>Apresentação institucional dos dois espaços</li>
+          <li>Motor de reservas próprio, com regras por espaço</li>
+          <li>Camada de CRM com histórico e comportamento do cliente</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE — EIXO 1: FUNCIONALIDADES -->
+<section class="slide" data-title="Eixo 1 — Funcionalidades">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Eixo 1</div>
+      <h2 class="title-lg">Como funciona, passo a passo.</h2>
+    </div>
+    <div class="flow-cards" id="flow-eixo1"></div>
+  </div>
+</section>
+
+<!-- SLIDE — EIXO 2: DESAFIO & SOLUÇÃO -->
+<section class="slide" data-title="Eixo 2 — Gestão de Inventário e Stocks">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Eixo 2</div>
+      <h2 class="title-lg">Gestão de Inventário e Stocks.</h2>
+      <p class="subtitle">Visão completa e centralizada do ciclo do produto entre os múltiplos espaços, desde a entrada em armazém até ao consumo final em loja, incluindo transformação de produtos e abate automático por venda.</p>
+    </div>
+    <div>
+      <div class="mono-label" style="color:var(--muted);">Modelo de Dados</div>
+      <div class="mini-flow lg">
+        <div class="mf-box"><b>Produto</b></div><div class="mf-arrow">→</div>
+        <div class="mf-box"><b>Unidade</b></div><div class="mf-arrow">→</div>
+        <div class="mf-box"><b>Fornecedor</b></div><div class="mf-arrow">→</div>
+        <div class="mf-box"><b>Armazém</b></div><div class="mf-arrow">→</div>
+        <div class="mf-box"><b>Stock</b></div><div class="mf-arrow">→</div>
+        <div class="mf-box hl"><b>Movimento</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE — EIXO 2: FUNCIONALIDADES -->
+<section class="slide" data-title="Eixo 2 — Funcionalidades principais">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Eixo 2</div>
+      <h2 class="title-lg">Funcionalidades principais.</h2>
+    </div>
+    <div class="pillars3" id="grid-eixo2func"></div>
+    <p class="emphasis-line" style="margin-left:auto;margin-right:auto;text-align:center;max-width:640px;font-size:18px;">Menos desperdício, visibilidade imediata de rutura de stock.</p>
+  </div>
+</section>
+
+<!-- SLIDE — EIXO 2: CICLO -->
+<section class="slide" data-title="Ciclo de Inventário e Stocks">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Eixo 2</div>
+      <h2 class="title-lg">Ciclo de Inventário e Stocks.</h2>
+    </div>
+    <div class="mini-flow dense">
+      <div class="mf-box"><b>Fornecedor</b><span>Envia fatura</span></div><div class="mf-arrow">→</div>
+      <div class="mf-box hl"><b>Fatura</b><span>Process. automático</span></div><div class="mf-arrow">→</div>
+      <div class="mf-box"><b>Armazém</b><span>Inventário atualizado</span></div><div class="mf-arrow">→</div>
+      <div class="mf-box"><b>Movimento</b><span>Para cada espaço</span></div><div class="mf-arrow">→</div>
+      <div class="mf-box"><b>Loja / Espaço</b><span>Stock local</span></div><div class="mf-arrow">→</div>
+      <div class="mf-box hl"><b>Venda</b><span>Abate via ficha técnica</span></div>
+    </div>
+    <p class="emphasis-line" style="margin-left:auto;margin-right:auto;text-align:center;max-width:760px;">Transformações em armazém (ex. peça → fatias) recalculam automaticamente o custo unitário em cada etapa.</p>
+  </div>
+</section>
+
+<!-- SLIDE — EIXO 3 -->
+<section class="slide" data-title="Eixo 3 — Monitorização de Preços de Compra">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Eixo 3</div>
+      <h2 class="title-lg">Monitorização de Preços de Compra.</h2>
+      <p class="subtitle">Visibilidade sobre a evolução dos custos de compra, permitindo decisões informadas sobre fornecedores e sobre os preços praticados no menu.</p>
+    </div>
+    <ul class="checklist" style="width:100%;font-size:16px;">
+      <li>Histórico de preço de compra por produto</li>
+      <li>Histórico e comparação entre fornecedores para o mesmo produto</li>
+      <li>Alertas de margem quando o preço de compra sobe e o menu não acompanha</li>
+      <li>Sugestão automática do novo preço de venda para repor a margem-alvo</li>
+    </ul>
+    <p class="emphasis-line" style="margin-left:auto;margin-right:auto;text-align:center;max-width:none;">Preços de menu ajustados com base em dados reais.</p>
+  </div>
+</section>
+
+<!-- SLIDE — EIXO 4 -->
+<section class="slide" data-title="Eixo 4 — Gestão e Business Intelligence">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Eixo 4</div>
+      <h2 class="title-lg">Gestão e Business Intelligence.</h2>
+      <p class="subtitle">Ferramenta de análise para que administradores e responsáveis acompanhem consumos, métricas e estatísticas de toda a operação — alimentada diretamente pelos três eixos anteriores.</p>
+    </div>
+    <div class="pillars3" id="grid-eixo4"></div>
+    <p class="emphasis-line" style="margin-left:auto;margin-right:auto;text-align:center;max-width:none;">Decisões de gestão apoiadas em números — essencial para negociar uma expansão com confiança.</p>
+  </div>
+</section>
+
+<!-- SLIDE — FASE 5 ADDONS -->
+<section class="slide" data-title="Fase 5 — Addons de Atendimento (opcional)">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Fase 5 · Opcional</div>
+      <h2 class="title-lg">Addons de Atendimento.</h2>
+      <p class="subtitle">Depois de validado o sistema de reservas em produção, o atendimento pode alargar-se a canais adicionais, reduzindo a dependência de resposta manual fora de horas ou em picos de procura.</p>
+    </div>
+    <div class="pillars3" id="grid-fase5"></div>
+  </div>
+</section>
+
+<!-- SLIDE — STACK TECNOLÓGICA -->
+<section class="slide" data-title="Stack Tecnológica">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Arquitetura</div>
+      <h2 class="title-lg">Stack Tecnológica.</h2>
+      <p class="subtitle">Arquitetura desacoplada entre backend e frontend, em vez de um painel administrativo tradicional — interfaces mais ricas e específicas para cada perfil: cliente final, equipa de sala e administração.</p>
+    </div>
+    <div class="data-table" style="max-width:1320px;">
+      <div class="data-row head" style="grid-template-columns:0.85fr 1.2fr 1.6fr;"><div>Camada</div><div>Tecnologia</div><div>Função</div></div>
+      <div class="data-row" style="grid-template-columns:0.85fr 1.2fr 1.6fr;"><div>Backend / API</div><div>Laravel (PHP) + Sanctum + Horizon</div><div>Regras de negócio, base de dados, filas de processamento</div></div>
+      <div class="data-row" style="grid-template-columns:0.85fr 1.2fr 1.6fr;"><div>Frontend público</div><div>Next.js (React)</div><div>Landing page e fluxo de reserva — otimizado para SEO e velocidade</div></div>
+      <div class="data-row" style="grid-template-columns:0.85fr 1.2fr 1.6fr;"><div>Painel Sala</div><div>Next.js (React)</div><div>Gestão diária de reservas por espaço, consulta de stock</div></div>
+      <div class="data-row" style="grid-template-columns:0.85fr 1.2fr 1.6fr;"><div>Painel Admin</div><div>Next.js (React)</div><div>Inventário, faturas, preços, BI e relatórios</div></div>
+      <div class="data-row" style="grid-template-columns:0.85fr 1.2fr 1.6fr;"><div>Infraestrutura</div><div>DigitalOcean + Laravel Forge</div><div>Alojamento, deploy contínuo, segurança de servidor</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE — FASEAMENTO / TIMELINE -->
+<section class="slide" data-title="Faseamento do Projeto">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">O Plano</div>
+      <h2 class="title-lg">Faseamento do Projeto.</h2>
+      <p class="subtitle">A descoberta de requisitos fica diluída na semana 1 de cada fase — cada módulo arranca com o que precisa de saber sobre si próprio, e o desenvolvimento começa logo de seguida.</p>
+    </div>
+    <div class="timeline11" id="timelineFases" style="--tl-cols:5;"></div>
+  </div>
+  <div class="footer-tags"><span>Núcleo (Fases 1–4)</span> 18 a 24 semanas · <span>Fase 5</span> +4 a 6 semanas, opcional</div>
+</section>
+
+<!-- SLIDE — FASE 1 & 2 DETALHE -->
+<section class="slide" data-title="Fase 1 &amp; Fase 2 — Detalhe">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Faseamento</div>
+      <h2 class="title-lg">Fase 1 &amp; Fase 2 — Detalhe.</h2>
+    </div>
+    <div class="duo-wrap">
+      <div class="duo-col">
+        <h4>Fase 1 — Reservas &amp; CRM</h4>
+        <div class="mono-label" style="color:var(--muted-2);margin-top:-10px;margin-bottom:18px;">6–8 semanas</div>
+        <ul>
+          <li>Descoberta: visita aos espaços, levantamento e wireframes</li>
+          <li>Landing page com apresentação dos dois espaços</li>
+          <li>Motor de reservas com regras por espaço</li>
+          <li>Painel de sala e CRM com taxa de no-show</li>
+          <li>Notificações automáticas de confirmação</li>
+        </ul>
+      </div>
+      <div class="duo-col">
+        <h4>Fase 2 — Inventário</h4>
+        <div class="mono-label" style="color:var(--muted-2);margin-top:-10px;margin-bottom:18px;">6–8 semanas</div>
+        <ul>
+          <li>Descoberta: fornecedores, faturas-tipo, modelação de dados</li>
+          <li>Registos base — produto, unidade, fornecedor, armazém</li>
+          <li>Registo de faturas com alertas de vencimento</li>
+          <li>Fichas técnicas, abate automático e transformações</li>
+          <li>Níveis mínimos de stock e alertas de reposição</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE — FASE 3 & 4 DETALHE -->
+<section class="slide" data-title="Fase 3 &amp; Fase 4 — Detalhe">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Faseamento</div>
+      <h2 class="title-lg">Fase 3 &amp; Fase 4 — Detalhe.</h2>
+    </div>
+    <div class="duo-wrap">
+      <div class="duo-col">
+        <h4>Fase 3 — Faturas &amp; Preços</h4>
+        <div class="mono-label" style="color:var(--muted-2);margin-top:-10px;margin-bottom:18px;">4–5 semanas</div>
+        <ul>
+          <li>Descoberta: processo de faturação, margem-alvo</li>
+          <li>Extração automática de dados de faturas por upload</li>
+          <li>Reconciliação automática com o inventário</li>
+          <li>Histórico e comparação de preços por fornecedor</li>
+          <li>Sugestão automática de novo preço de venda</li>
+        </ul>
+      </div>
+      <div class="duo-col">
+        <h4>Fase 4 — Gestão &amp; BI</h4>
+        <div class="mono-label" style="color:var(--muted-2);margin-top:-10px;margin-bottom:18px;">2–3 semanas</div>
+        <ul>
+          <li>Descoberta: indicadores prioritários e formato dos relatórios</li>
+          <li>Dashboards — consumos, custos, ocupação, no-show</li>
+          <li>Relatórios por espaço/período, exportação PDF/Excel</li>
+          <li>Rentabilidade por prato</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE — INVESTIMENTO CORE -->
+<section class="slide" data-title="Investimento por Fase">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">O Investimento</div>
+      <h2 class="title-lg">Investimento por Fase.</h2>
+    </div>
+    <div class="data-table">
+      <div class="data-row head" style="grid-template-columns:1.2fr 3fr 1fr;"><div>Fase</div><div>O que inclui</div><div>Valor</div></div>
+      <div class="data-row" style="grid-template-columns:1.2fr 3fr 1fr;"><div>Fase 1 — Reservas + CRM</div><div>Descoberta, landing page, motor de reservas, painel de sala e CRM</div><div>7.670€</div></div>
+      <div class="data-row" style="grid-template-columns:1.2fr 3fr 1fr;"><div>Fase 2 — Inventário</div><div>Modelo de inventário completo — faturas, movimentos, fichas técnicas</div><div>7.410€</div></div>
+      <div class="data-row" style="grid-template-columns:1.2fr 3fr 1fr;"><div>Fase 3 — Faturas + Preços</div><div>Extração automática, histórico de preços, sugestão de preço de venda</div><div>4.420€</div></div>
+      <div class="data-row" style="grid-template-columns:1.2fr 3fr 1fr;"><div>Fase 4 — Gestão e BI</div><div>Dashboards, relatórios por espaço/período, rentabilidade por prato</div><div>2.340€</div></div>
+      <div class="data-row total" style="grid-template-columns:1.2fr 3fr 1fr;"><div>Total core</div><div>Fases 1 a 4 completas</div><div>21.840€</div></div>
+    </div>
+  </div>
+  <div class="footer-tags"><span>Acresce IVA à Taxa Legal em Vigor</span></div>
+</section>
+
+<!-- SLIDE — INVESTIMENTO FASE 5 -->
+<section class="slide" data-title="Investimento — Fase 5 (Addons)">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">O Investimento · Opcional</div>
+      <h2 class="title-lg">Fase 5 — Addons de Atendimento.</h2>
+      <p class="subtitle">Orçamentada apenas se o cliente decidir avançar.</p>
+    </div>
+    <div class="data-table">
+      <div class="data-row head" style="grid-template-columns:1.2fr 2.4fr 0.9fr 1fr;"><div>Addon</div><div>O que inclui</div><div>Valor</div><div>Custo recorrente</div></div>
+      <div class="data-row" style="grid-template-columns:1.2fr 2.4fr 0.9fr 1fr;"><div>Bot WhatsApp</div><div>Fluxo completo de reserva e FAQ, com handoff para a equipa</div><div>~2.600€</div><div>15€–40€/mês</div></div>
+      <div class="data-row" style="grid-template-columns:1.2fr 2.4fr 0.9fr 1fr;"><div>Bot Instagram</div><div>Extensão do mesmo bot ao Instagram Direct</div><div>~780€</div><div>0€/mês</div></div>
+      <div class="data-row" style="grid-template-columns:1.2fr 2.4fr 0.9fr 1fr;"><div>Atendedor de voz</div><div>Atendimento telefónico automático, reserva em tempo real</div><div>~2.080€</div><div>35€–70€/mês</div></div>
+      <div class="data-row total" style="grid-template-columns:1.2fr 2.4fr 0.9fr 1fr;"><div>Total Fase 5</div><div>—</div><div>~5.460€</div><div>50€–110€/mês</div></div>
+    </div>
+    <p class="emphasis-line" style="margin-left:auto;margin-right:auto;text-align:center;max-width:none;">Investimento total, incluindo addons: 27.300€.</p>
+  </div>
+</section>
+
+<!-- SLIDE — O QUE PRECISAMOS DE SI (1&2) -->
+<section class="slide" data-title="O que Precisamos de Si — Fase 1 &amp; 2">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Colaboração</div>
+      <h2 class="title-lg">O que Precisamos de Si.</h2>
+      <p class="subtitle">O calendário previsto depende de disponibilidade e colaboração do Cruzeiro das Francesinhas em cada fase.</p>
+    </div>
+    <div class="duo-wrap">
+      <div class="duo-col">
+        <h4>Fase 1 — Reservas &amp; CRM</h4>
+        <ul>
+          <li>Disponibilidade da equipa para a visita inicial (semana 1)</li>
+          <li>Interlocutor único responsável por validar decisões</li>
+          <li>Textos, fotografias e menus atualizados</li>
+          <li>Validação das regras de disponibilidade por espaço</li>
+          <li>Feedback sobre o protótipo antes do fecho da fase</li>
+        </ul>
+      </div>
+      <div class="duo-col">
+        <h4>Fase 2 — Inventário</h4>
+        <ul>
+          <li>Acesso a faturas e histórico de fornecedores (semana 1)</li>
+          <li>Lista de fornecedores e fichas técnicas existentes</li>
+          <li>Validação das transformações em armazém típicas</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE — O QUE PRECISAMOS DE SI (3,4,5) -->
+<section class="slide" data-title="O que Precisamos de Si — Fase 3, 4 &amp; 5">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Colaboração</div>
+      <h2 class="title-lg">O que Precisamos de Si.</h2>
+    </div>
+    <div class="pillars3" id="grid-precisamos"></div>
+  </div>
+</section>
+
+<!-- SLIDE — CONDIÇÕES COMERCIAIS -->
+<section class="slide" data-title="Condições Comerciais">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Condições Comerciais</div>
+      <h2 class="title-lg">Modelo de pagamento.</h2>
+      <p class="subtitle">Pagamento inicial na adjudicação, seguido de mensalidades fixas ao longo da execução, com regra de acerto caso o calendário se desvie da duração de referência.</p>
+    </div>
+    <div class="content-row" style="flex:none;width:100%;align-items:flex-start;">
+      <div class="data-table" style="flex:1.1;">
+        <div class="data-row head" style="grid-template-columns:2fr 1fr;"><div>Momento</div><div>Valor</div></div>
+        <div class="data-row" style="grid-template-columns:2fr 1fr;"><div>Adjudicação (arranque)</div><div>5.460€</div></div>
+        <div class="data-row" style="grid-template-columns:2fr 1fr;"><div>Mensalidade — mês 1 a 6</div><div>2.730€ cada</div></div>
+        <div class="data-row" style="grid-template-columns:2fr 1fr;"><div>Mensalidade adicional (atraso do cliente)</div><div>2.730€ / extra</div></div>
+      </div>
+      <div class="note-box" style="flex:0.9;">
+        <div class="nb-label">Nota</div>
+        <p>Fase 5 segue o mesmo princípio — só orçamentada se e quando o cliente avançar.</p>
+        <p>Alterações de âmbito depois de uma fase iniciada são orçamentadas e calendarizadas à parte.</p>
+        <p>Proposta válida por 30 dias a partir da data de emissão.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE — SUPORTE PÓS-LANÇAMENTO (GARANTIA + MANUTENÇÃO) -->
+<section class="slide" data-title="Suporte Pós-Lançamento">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Suporte Pós-Lançamento</div>
+      <h2 class="title-lg">Garantia &amp; Manutenção Mensal.</h2>
+    </div>
+    <div class="duo-wrap">
+      <div class="duo-col">
+        <h4>Garantia Inicial · Incluída, sem custo</h4>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">15 dias após a entrega de cada fase, para:</p>
+        <ul>
+          <li>Correção de bugs ou anomalias identificadas</li>
+          <li>Resolução de problemas de atualizações da plataforma</li>
+          <li>Pequenos ajustes técnicos de funcionamento</li>
+          <li>Esclarecimento de dúvidas sobre o entregue</li>
+        </ul>
+      </div>
+      <div class="duo-col">
+        <h4>Pacote de Manutenção Mensal</h4>
+        <ul>
+          <li>5h / mês incluídas</li>
+          <li>Cobre bugs, ajustes técnicos, monitorização e segurança</li>
+          <li>Não cobre novos desenvolvimentos (orçamentados à parte)</li>
+          <li>Horas não utilizadas não acumulam</li>
+        </ul>
+        <p class="invest-price" style="font-size:26px;margin-top:12px;">325€<span>/mês</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE — PACKS DE HORAS -->
+<section class="slide" data-title="Packs de Horas Adicionais">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Suporte Pós-Lançamento</div>
+      <h2 class="title-lg">Packs de Horas Adicionais.</h2>
+      <p class="subtitle">Para picos de trabalho ou pedidos pontuais fora do pacote mensal.</p>
+    </div>
+    <div class="data-table" style="max-width:640px;">
+      <div class="data-row head" style="grid-template-columns:1fr 1fr;"><div>Pack</div><div>Valor</div></div>
+      <div class="data-row" style="grid-template-columns:1fr 1fr;"><div>1 hora</div><div>65€</div></div>
+      <div class="data-row" style="grid-template-columns:1fr 1fr;"><div>5 horas</div><div>310€</div></div>
+      <div class="data-row" style="grid-template-columns:1fr 1fr;"><div>10 horas</div><div>600€</div></div>
+      <div class="data-row" style="grid-template-columns:1fr 1fr;"><div>20 horas</div><div>1.150€</div></div>
+    </div>
+  </div>
+  <div class="footer-tags"><span>Uso Flexível</span> Débito em Blocos de 15min · Acresce IVA · Alojamento Faturado à Parte</div>
+</section>
+
+<!-- SLIDE — VISÃO DE FUTURO -->
+<section class="slide" data-title="Visão de Futuro">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Visão de Futuro</div>
+      <h2 class="title-lg">Oportunidades de valorização adicional.</h2>
+      <p class="subtitle">Sem alterar a base de trabalho já prevista nesta proposta.</p>
+    </div>
+    <div class="grid grid-outline" style="grid-template-columns:repeat(3,1fr);width:100%;" id="grid-futuro"></div>
+  </div>
+</section>
+
+<!-- SLIDE — PRÓXIMOS PASSOS -->
+<section class="slide" data-title="Próximos Passos">
+  <div class="slide-head">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="eyebrow">Próximos Passos</div>
+      <h2 class="title-lg">Próximos Passos.</h2>
+    </div>
+    <div class="content-row" style="flex:none;width:100%;align-items:center;">
+      <ul class="checklist lg" style="flex:1.3;">
+        <li>Validação do âmbito e das prioridades de fase</li>
+        <li>Agendamento das visitas aos dois espaços (Fase 0)</li>
+        <li>Definição de calendário de entregas por fase</li>
+      </ul>
+      <div class="note-box" style="flex:1;">
+        <div class="nb-label">Formalização</div>
+        <p>Os valores finais de faturação, calendário de pagamentos e demais termos legais são formalizados em contrato, com aceitação assinada por ambas as partes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE — FECHO -->
+<section class="slide s19" data-title="Ainda à procura? Fale connosco.">
+  <div class="slide-head" style="position:absolute;top:64px;left:88px;right:88px;">
+    <span class="slide-num"></span>
+    <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
+  </div>
+  <div class="eyebrow" style="justify-content:center;">Vamos Começar?</div>
+  <h2 class="s19-title">Ainda à procura?<br>Fale connosco.</h2>
+  <p class="subtitle red" style="font-weight:700;font-size:22px;text-transform:uppercase;letter-spacing:0.01em;max-width:640px;">Na digiUP desenvolvemos a solução à medida da sua empresa.</p>
+  <div class="s19-contact"><span>931 784 170</span><span>joao@digiup.me</span><span>Vila Nova de Gaia · Amarante</span></div>
+  <div class="s19-logo">
+    <svg class="logo-mark-xl" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg>
+  </div>
+  <div class="s19-copy">2013—2026 // © TODOS OS DIREITOS RESERVADOS</div>
+</section>
+
+</div>
+
+<div class="counter"><b id="curNum">01</b> / <span id="totalNum"></span> &nbsp;·&nbsp; <span id="curTitle" style="color:var(--muted-2);"></span></div>
+<div class="dots" id="dots"></div>
+<div class="arrows">
+  <button class="arrow-btn" id="prevBtn" aria-label="Slide anterior"><span class="arrow-ic">&#8592;</span></button>
+  <button class="arrow-btn" id="nextBtn" aria-label="Slide seguinte"><span class="arrow-ic">&#8594;</span></button>
+</div>
+
+<div class="video-modal" id="videoModal">
+  <div class="video-modal-close" id="videoModalClose" role="button" aria-label="Fechar vídeo" tabindex="0">✕</div>
+  <video id="videoModalPlayer" controls playsinline></video>
+</div>
+
+<div class="util-btns">
+  <button class="util-btn" id="menuBtn" aria-label="Ver todos os slides" title="Ver todos os slides (G)">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+  </button>
+  <button class="util-btn" id="fullscreenBtn" aria-label="Ecrã inteiro" title="Ecrã inteiro (F)">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 9V5a1 1 0 011-1h4M20 9V5a1 1 0 00-1-1h-4M4 15v4a1 1 0 001 1h4M20 15v4a1 1 0 01-1 1h-4"/></svg>
+  </button>
+</div>
+
+<div class="click-zone left" id="zoneLeft" aria-hidden="true"></div>
+<div class="click-zone right" id="zoneRight" aria-hidden="true"></div>
+
+<div class="shortcuts-hint" id="shortcutsHint">
+  <span><b>&#8592; &#8594;</b> navegar</span>
+  <span><b>G</b> menu</span>
+  <span><b>F</b> ecrã inteiro</span>
+</div>
+
+<div class="overview-overlay" id="overviewOverlay">
+  <div class="overview-head"><h3>Todos os slides</h3><span id="ovCount"></span></div>
+  <div class="overview-grid" id="overviewGrid"></div>
+  <div class="overview-close-hint">Clica num slide para saltar &nbsp;·&nbsp; ESC para fechar</div>
+</div>
+
+<script>
+/* ---------- ICONS (inline SVG strings) — biblioteca disponível para novos slides ---------- */
+const ICONS = {
+  strategy: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4l16 8-7 2-2 7z"/></svg>',
+  design: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3a9 9 0 100 18 3 3 0 003-3 2 2 0 012-2h1a3 3 0 003-3 9 9 0 00-9-10z"/><circle cx="8.5" cy="10.5" r="0.7" fill="currentColor"/><circle cx="12" cy="7.5" r="0.7" fill="currentColor"/></svg>',
+  webdev: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="14" rx="1"/><path d="M3 8h18M8 21h8M12 18v3"/></svg>',
+  monitor: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/><path d="M8 10.8l2.3 2.2L16 7.5"/></svg>',
+  audit: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="6"/><path d="M15 15l5 5"/></svg>',
+  target: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.6" fill="currentColor"/></svg>',
+  trophy: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 4h10v4a5 5 0 01-10 0V4z"/><path d="M5 6H3v2a4 4 0 004 4M19 6h2v2a4 4 0 01-4 4"/><path d="M12 13v4M9 21h6M9 17h6v4H9z"/></svg>',
+  coin: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><path d="M12 7v10M9.5 9.5c0-1 .8-1.5 2.5-1.5s2.5.7 2.5 1.7c0 2.3-5 1.3-5 3.6 0 1 1 1.7 2.5 1.7s2.5-.5 2.5-1.5"/></svg>',
+  card: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>',
+  mobile: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>',
+  bank: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10l9-6 9 6"/><path d="M4 10v9M9 10v9M15 10v9M20 10v9"/><path d="M2 21h20"/></svg>',
+  xmark: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  video: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="12" height="12" rx="1"/><path d="M15 10l6-3v10l-6-3z"/></svg>',
+  content: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M8 10h8M8 14h5"/></svg>',
+  heart: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 20s-7-4.35-9.5-8.5C1 8.5 2.5 5 6 5c2 0 3.5 1.2 4 2.2.5-1 2-2.2 4-2.2 3.5 0 5 3.5 3.5 6.5C19 15.65 12 20 12 20z"/></svg>',
+  chartup: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19h16M6 15l4-4 3 3 6-7"/></svg>',
+  expand: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+  chat: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 11.5a8.4 8.4 0 01-8.9 8.4 8.9 8.9 0 01-3.4-.7L3 20l1.05-4.1A8.4 8.4 0 1121 11.5z"/></svg>',
+  mic: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>',
+  qrcode: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20v.01"/></svg>',
+  trash: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+};
+
+/* ---------- ORBIT DIAGRAM (equipa) — chamar quando existir slide de equipa ----------
+   Exemplo de utilização (ver proposta-aromas-flavors-tours.html para referência completa):
+   buildOrbit('orbitTeam', '<svg .../>', [{label:"Estratégia", icon:"strategy"}, ...], 210);
+*/
+function buildOrbit(containerId, centerLabel, nodes, radius){
+  const wrap = document.getElementById(containerId);
+  if(!wrap) return;
+  wrap.innerHTML = '<div class="orbit-ring r1"></div><div class="orbit-ring r2"></div>';
+  const center = document.createElement('div');
+  center.className='orbit-center';
+  center.innerHTML = centerLabel;
+  wrap.appendChild(center);
+  const n = nodes.length;
+  nodes.forEach((node,i)=>{
+    const angle = (i/n)*2*Math.PI - Math.PI/2;
+    const iconCx = 280 + radius*Math.cos(angle);
+    const iconCy = 280 + radius*Math.sin(angle) - 26;
+    const x = iconCx - 65;
+    const y = iconCy - 29;
+
+    const dx = iconCx - 280, dy = iconCy - 280;
+    const length = Math.sqrt(dx*dx+dy*dy) - 78;
+    const angleDeg = Math.atan2(dy,dx) * 180/Math.PI;
+
+    const line = document.createElement('div');
+    line.className = 'orbit-line';
+    line.style.transform = `rotate(${angleDeg}deg)`;
+    line.style.width = '0px';
+    wrap.appendChild(line);
+
+    const el = document.createElement('div');
+    el.className='orbit-node';
+    el.style.left = x+'px';
+    el.style.top = y+'px';
+    el.innerHTML = `<div class="node-icon">${ICONS[node.icon]}</div><b>${node.label}</b>`;
+    el.addEventListener('mouseenter', ()=>{ line.style.width = length+'px'; line.classList.add('on'); });
+    el.addEventListener('mouseleave', ()=>{ line.style.width = '0px'; line.classList.remove('on'); });
+    wrap.appendChild(el);
+  });
+}
+
+/* ---------- VIDEO MODAL — pronto a usar em galerias futuras ---------- */
+const videoModal = document.getElementById('videoModal');
+const videoModalPlayer = document.getElementById('videoModalPlayer');
+function openVideoModal(src){
+  videoModalPlayer.src = src;
+  videoModal.classList.add('open');
+  videoModalPlayer.play();
+}
+function closeVideoModal(){
+  videoModal.classList.remove('open');
+  videoModalPlayer.pause();
+  videoModalPlayer.removeAttribute('src');
+  videoModalPlayer.load();
+}
+document.getElementById('videoModalClose').addEventListener('click', closeVideoModal);
+document.getElementById('videoModalClose').addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); closeVideoModal(); } });
+videoModal.addEventListener('click', (e)=>{ if(e.target===videoModal) closeVideoModal(); });
+document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && videoModal.classList.contains('open')) closeVideoModal(); });
+
+/* ---------- O QUE PRECISAMOS DE SI — FASE 3, 4 & 5 ---------- */
+(function(){
+  const items = [
+    {icon:'coin', title:'Fase 3 — Faturas & Preços', items:['Confirmação da margem-alvo por prato ou categoria','Validação do processo de reconciliação de faturas']},
+    {icon:'chartup', title:'Fase 4 — Gestão & BI', items:['Indicação dos indicadores mais relevantes','Validação dos relatórios-tipo antes da entrega']},
+    {icon:'chat', title:'Fase 5 — Addons', items:['Acesso admin ao Instagram e ao WhatsApp Business','Disponibilidade para validar os fluxos de conversação']},
+  ];
+  const el = document.getElementById('grid-precisamos');
+  if(el) el.innerHTML = items.map(it=>`
+    <div class="p">
+      <div class="pi"><span style="display:inline-flex;">${ICONS[it.icon]}</span></div>
+      <h4>${it.title}</h4>
+      <ul>${it.items.map(li=>`<li>${li}</li>`).join('')}</ul>
+    </div>`).join('');
+})();
+
+/* ---------- ENQUADRAMENTO — OS QUATRO EIXOS ---------- */
+(function(){
+  const items = [
+    {icon:'webdev', label:'Landing Page + Reservas & CRM'},
+    {icon:'content', label:'Inventário & Stocks'},
+    {icon:'coin', label:'Monitorização de Preços de Compra'},
+    {icon:'chartup', label:'Gestão & Business Intelligence'},
+  ];
+  const el = document.getElementById('grid-eixos');
+  if(el) el.innerHTML = items.map(it=>`
+    <div class="card" style="text-align:center;">
+      <div class="icon-box" style="width:48px;height:48px;margin:0 auto 16px;"><span style="display:inline-flex;transform:scale(1.2);">${ICONS[it.icon]}</span></div>
+      <div class="card-label" style="font-size:13px;">${it.label}</div>
+    </div>`).join('');
+})();
+
+/* ---------- EIXO 1 — LANDING / MOTOR DE RESERVAS / PAINEL DE SALA / CRM (fluxo único) ---------- */
+(function(){
+  const items = [
+    {icon:'design', title:'Landing Page', items:['Apresentação dos dois espaços','CTA "Reservar mesa"']},
+    {icon:'target', title:'Motor de Reservas', items:['Espaço → pessoas → data/hora','Regras por espaço'], hl:true},
+    {icon:'monitor', title:'Painel de Sala', items:['Aceita, rejeita ou propõe alteração','Notificação automática ao cliente']},
+    {icon:'content', title:'Camada CRM', items:['Ficha de cliente com histórico','Cálculo automático de no-show']},
+  ];
+  const el = document.getElementById('flow-eixo1');
+  if(el) el.innerHTML = items.map((it,i)=>`
+    ${i>0 ? '<div class="fc-arrow">→</div>' : ''}
+    <div class="fc${it.hl ? ' hl' : ''}">
+      <div class="fi"><span style="display:inline-flex;transform:scale(0.9);">${ICONS[it.icon]}</span></div>
+      <h4>${it.title}</h4>
+      <ul>${it.items.map(li=>`<li>${li}</li>`).join('')}</ul>
+    </div>`).join('');
+})();
+
+/* ---------- EIXO 2 — FUNCIONALIDADES PRINCIPAIS ---------- */
+(function(){
+  const items = [
+    {icon:'card', title:'Faturação', items:['Registo de faturas com processamento automático','Datas de pagamento com avisos de vencimento']},
+    {icon:'monitor', title:'Inventário & Movimentos', items:['Atualização automática do inventário via faturas','Movimentos entre armazém central e cada espaço']},
+    {icon:'target', title:'Produção & Controlo', items:['Fichas técnicas com abate automático por venda','Transformações — ex. queijo → fatias, custo automático','Visão consolidada com alertas de nível mínimo']},
+  ];
+  const el = document.getElementById('grid-eixo2func');
+  if(el) el.innerHTML = items.map(it=>`
+    <div class="p">
+      <div class="pi"><span style="display:inline-flex;">${ICONS[it.icon]}</span></div>
+      <h4>${it.title}</h4>
+      <ul>${it.items.map(li=>`<li>${li}</li>`).join('')}</ul>
+    </div>`).join('');
+})();
+
+/* ---------- EIXO 4 — GESTÃO E BI ---------- */
+(function(){
+  const items = [
+    {icon:'chartup', title:'Dashboards', items:['Indicadores-chave: consumos e custos','Ocupação e taxa de no-show']},
+    {icon:'content', title:'Relatórios', items:['Por espaço e por período','Exportação em PDF/Excel']},
+    {icon:'coin', title:'Rentabilidade por Prato', items:['Cruza ficha técnica','Com preço de compra atualizado']},
+  ];
+  const el = document.getElementById('grid-eixo4');
+  if(el) el.innerHTML = items.map(it=>`
+    <div class="p">
+      <div class="pi"><span style="display:inline-flex;">${ICONS[it.icon]}</span></div>
+      <h4>${it.title}</h4>
+      <ul>${it.items.map(li=>`<li>${li}</li>`).join('')}</ul>
+    </div>`).join('');
+})();
+
+/* ---------- FASE 5 — ADDONS DE ATENDIMENTO ---------- */
+(function(){
+  const items = [
+    {icon:'chat', title:'Bot WhatsApp', items:['Reserva e FAQ sem intervenção humana','Canal oficial via parceiro certificado','Confirmações e lembretes automáticos'], cost:'15€–40€/mês'},
+    {icon:'heart', title:'Bot Instagram', items:['Reaproveita a infraestrutura do WhatsApp','Ligado à conta profissional de Instagram'], cost:'0€/mês'},
+    {icon:'mic', title:'Atendedor de Voz', items:['Perceção de pedido por conversação natural','Consulta disponibilidade em tempo real','Transfere para a equipa quando necessário'], cost:'35€–70€/mês'},
+  ];
+  const el = document.getElementById('grid-fase5');
+  if(el) el.innerHTML = items.map(it=>`
+    <div class="p">
+      <div class="pi"><span style="display:inline-flex;">${ICONS[it.icon]}</span></div>
+      <h4>${it.title}</h4>
+      <ul>${it.items.map(li=>`<li>${li}</li>`).join('')}</ul>
+      <div class="mono-label" style="color:var(--red-2);margin-top:14px;margin-bottom:0;">${it.cost}</div>
+    </div>`).join('');
+})();
+
+/* ---------- VISÃO DE FUTURO ---------- */
+(function(){
+  const items = [
+    {icon:'expand', title:'Produtização / White-label', sub:'Solução licenciável a outros grupos de restauração.', featured:true},
+    {icon:'qrcode', title:'Self-ordering na Mesa', sub:'Via QR code, ligado ao inventário e fichas técnicas.'},
+    {icon:'heart', title:'Programa de Fidelização', sub:'Integrado com o CRM e os canais de WhatsApp.'},
+    {icon:'chartup', title:'Previsão de Procura', sub:'Apoio ao escalonamento de equipas via histórico.'},
+    {icon:'trash', title:'Dashboard de Desperdício', sub:'A partir dos dados de fichas técnicas e transformações.'},
+    {icon:'audit', title:'Pronto para Due Diligence', sub:'Relatórios e histórico apoiando a expansão criteriosa.'},
+  ];
+  const el = document.getElementById('grid-futuro');
+  if(el) el.innerHTML = items.map(it=>`
+    <div class="card${it.featured ? ' featured' : ''}" style="text-align:center;padding:32px 18px;position:relative;">
+      ${it.featured ? '<span class="card-star">★</span>' : ''}
+      <div class="icon-box" style="width:44px;height:44px;margin:0 auto 14px;"><span style="display:inline-flex;transform:scale(1.2);">${ICONS[it.icon]}</span></div>
+      <div class="card-label" style="font-size:13px;margin-bottom:8px;">${it.title}</div>
+      <div style="font-size:11.5px;color:var(--muted);font-weight:400;line-height:1.55;">${it.sub}</div>
+    </div>`).join('');
+})();
+
+/* ---------- FASEAMENTO — TIMELINE (4 FASES + FASE 5 OPCIONAL) ---------- */
+(function(){
+  const q = [
+    {icon:'target', tag:'Fase 1 · 6–8 sem.', title:'Reservas & CRM', sub:'Landing page, motor de reservas, painel de sala e CRM.'},
+    {icon:'webdev', tag:'Fase 2 · 6–8 sem.', title:'Inventário', sub:'Faturas, movimentos, fichas técnicas e transformações.'},
+    {icon:'audit', tag:'Fase 3 · 4–5 sem.', title:'Faturas & Preços', sub:'Extração automática e sugestão de preço de venda.'},
+    {icon:'trophy', tag:'Fase 4 · 2–3 sem.', title:'Gestão & BI', sub:'Dashboards, relatórios e rentabilidade por prato.'},
+    {icon:'chat', tag:'Fase 5 · Opcional', title:'Addons de Atendimento', sub:'WhatsApp, Instagram e voz — só se avançar.', optional:true},
+  ];
+  const wrap = document.getElementById('timelineFases');
+  if(!wrap) return;
+  wrap.innerHTML = `
+    <div class="tl-row">${q.map((s,i)=>`<div class="ic-wrap${s.optional ? ' optional' : ''}" data-qf="${i}"><div class="ic">${ICONS[s.icon]}</div></div>`).join('')}</div>
+    <div class="qsteps">${q.map((s,i)=>`<div class="q${s.optional ? ' optional' : ''}" data-qf="${i}"><b class="tag">${s.tag}</b><h4>${s.title}</h4><p>${s.sub}</p></div>`).join('')}</div>`;
+  wrap.querySelectorAll('[data-qf]').forEach(el=>{
+    el.addEventListener('mouseenter', ()=>{
+      wrap.querySelectorAll(`[data-qf="${el.dataset.qf}"]`).forEach(m=>m.classList.add('q-active'));
+    });
+    el.addEventListener('mouseleave', ()=>{
+      wrap.querySelectorAll(`[data-qf="${el.dataset.qf}"]`).forEach(m=>m.classList.remove('q-active'));
+    });
+  });
+})();
+
+/* ---------- SLIDE NAV LOGIC ---------- */
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+let idx = 0;
+const titles = Array.from(slides).map(s => s.dataset.title || '');
+
+/* numeração automática "01 / N" em cada canto de slide — não é preciso
+   atualizar manualmente ao inserir ou remover slides */
+slides.forEach((s,i)=>{
+  const numEl = s.querySelector('.slide-num');
+  if(numEl) numEl.textContent = `${String(i+1).padStart(2,'0')} / ${String(total).padStart(2,'0')}`;
+});
+
+const dotsWrap = document.getElementById('dots');
+slides.forEach((s,i)=>{
+  const d = document.createElement('div');
+  d.className='d'+(i===0?' active':'');
+  d.setAttribute('role','button');
+  d.setAttribute('tabindex','0');
+  d.setAttribute('aria-label',`Ir para o slide ${i+1}: ${titles[i]}`);
+  d.innerHTML = `<span class="tip">${String(i+1).padStart(2,'0')} — ${titles[i]}</span>`;
+  d.addEventListener('click',()=>goTo(i));
+  d.addEventListener('keydown',(e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); goTo(i); } });
+  dotsWrap.appendChild(d);
+});
+const dotEls = dotsWrap.querySelectorAll('.d');
+const curNum = document.getElementById('curNum');
+const curTitle = document.getElementById('curTitle');
+const progressFill = document.getElementById('progressFill');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+
+function render(){
+  slides.forEach((s,i)=>s.classList.toggle('active', i===idx));
+  dotEls.forEach((d,i)=>d.classList.toggle('active', i===idx));
+  curNum.textContent = String(idx+1).padStart(2,'0');
+  curTitle.textContent = titles[idx];
+  progressFill.style.width = ((idx+1)/total*100)+'%';
+  prevBtn.disabled = idx===0;
+  nextBtn.disabled = idx===total-1;
+  history.replaceState(null,'','#'+(idx+1));
+  wakeHint();
+}
+function goTo(i){
+  idx = Math.max(0, Math.min(total-1, i));
+  render();
+}
+prevBtn.addEventListener('click',()=>goTo(idx-1));
+nextBtn.addEventListener('click',()=>goTo(idx+1));
+
+/* click zones (edges of screen advance/retreat) */
+document.getElementById('zoneLeft').addEventListener('click', ()=>goTo(idx-1));
+document.getElementById('zoneRight').addEventListener('click', ()=>goTo(idx+1));
+
+/* keyboard */
+window.addEventListener('keydown', e=>{
+  if(overviewOpen){
+    if(e.key==='Escape') closeOverview();
+    return;
+  }
+  if(['ArrowRight','PageDown',' '].includes(e.key)){ e.preventDefault(); goTo(idx+1); }
+  if(['ArrowLeft','PageUp'].includes(e.key)){ e.preventDefault(); goTo(idx-1); }
+  if(e.key==='Home') goTo(0);
+  if(e.key==='End') goTo(total-1);
+  if(e.key.toLowerCase()==='g') openOverview();
+  if(e.key.toLowerCase()==='f') toggleFullscreen();
+});
+
+/* touch swipe */
+let touchX=null;
+window.addEventListener('touchstart', e=>{touchX=e.touches[0].clientX;});
+window.addEventListener('touchend', e=>{
+  if(touchX===null) return;
+  const dx = e.changedTouches[0].clientX - touchX;
+  if(Math.abs(dx)>60){ dx<0 ? goTo(idx+1) : goTo(idx-1); }
+  touchX=null;
+});
+
+/* wheel */
+let wheelLock=false;
+window.addEventListener('wheel', e=>{
+  if(overviewOpen) return;
+  if(wheelLock) return;
+  if(Math.abs(e.deltaY)>30){
+    wheelLock=true;
+    e.deltaY>0 ? goTo(idx+1) : goTo(idx-1);
+    setTimeout(()=>wheelLock=false, 700);
+  }
+});
+
+/* fullscreen toggle */
+function toggleFullscreen(){
+  if(!document.fullscreenElement){ document.documentElement.requestFullscreen().catch(()=>{}); }
+  else{ document.exitFullscreen(); }
+}
+document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
+
+/* overview / slide sorter */
+const overviewOverlay = document.getElementById('overviewOverlay');
+const overviewGrid = document.getElementById('overviewGrid');
+let overviewOpen = false;
+document.getElementById('ovCount').textContent = total + ' slides';
+overviewGrid.innerHTML = titles.map((t,i)=>`
+  <div class="ov-item" data-i="${i}">
+    <span class="ov-num">${String(i+1).padStart(2,'0')}</span>
+    <span class="ov-title">${t}</span>
+  </div>`).join('');
+overviewGrid.querySelectorAll('.ov-item').forEach(item=>{
+  item.addEventListener('click', ()=>{
+    goTo(parseInt(item.dataset.i,10));
+    closeOverview();
+  });
+});
+function openOverview(){
+  overviewOpen = true;
+  overviewOverlay.classList.add('open');
+  overviewGrid.querySelectorAll('.ov-item').forEach((el,i)=>el.classList.toggle('current', i===idx));
+}
+function closeOverview(){
+  overviewOpen = false;
+  overviewOverlay.classList.remove('open');
+}
+document.getElementById('menuBtn').addEventListener('click', openOverview);
+overviewOverlay.addEventListener('click', e=>{ if(e.target===overviewOverlay) closeOverview(); });
+
+/* shortcuts hint auto-fade */
+const shortcutsHint = document.getElementById('shortcutsHint');
+let hintTimer;
+function wakeHint(){
+  shortcutsHint.classList.remove('fade');
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(()=>shortcutsHint.classList.add('fade'), 4000);
+}
+wakeHint();
+
+document.getElementById('totalNum').textContent = String(total).padStart(2,'0');
+render();
+
+/* ---------- AMBIENT NETWORK CANVAS ---------- */
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+let w,h,points=[];
+function resize(){
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
+  const count = Math.max(48, Math.floor(w*h/22000));
+  points = Array.from({length:count}, ()=>({
+    x:Math.random()*w, y:Math.random()*h,
+    vx:(Math.random()-0.5)*0.15, vy:(Math.random()-0.5)*0.15
+  }));
+}
+window.addEventListener('resize', resize);
+resize();
+function tick(){
+  ctx.clearRect(0,0,w,h);
+  points.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<0||p.x>w) p.vx*=-1;
+    if(p.y<0||p.y>h) p.vy*=-1;
+  });
+  for(let i=0;i<points.length;i++){
+    for(let j=i+1;j<points.length;j++){
+      const a=points[i], b=points[j];
+      const dx=a.x-b.x, dy=a.y-b.y;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<155){
+        ctx.strokeStyle = `rgba(211,20,39,${0.32*(1-dist/155)})`;
+        ctx.lineWidth=0.8;
+        ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+      }
+    }
+  }
+  points.forEach(p=>{
+    ctx.fillStyle='rgba(255,75,66,0.85)';
+    ctx.beginPath(); ctx.arc(p.x,p.y,1.8,0,Math.PI*2); ctx.fill();
+  });
+  requestAnimationFrame(tick);
+}
+tick();
+</script>
+</body>
+</html>
