@@ -506,10 +506,12 @@ h1,h2,h3{font-family:'Lexend',sans-serif;letter-spacing:0.005em;font-weight:500;
 
 /* closing slide */
 .s19-title{font-size:50px;line-height:1.1;font-weight:500;max-width:900px;}
-.s19{justify-content:center;align-items:center;text-align:center;}
+.s19{align-items:center;text-align:center;}
+.s19-main{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;}
+.s19-footer{padding-bottom:12px;}
 .s19 .subtitle{margin:24px auto 0;text-align:center;}
-.s19-logo{margin-top:70px;font-family:'Lexend',sans-serif;font-weight:800;font-size:26px;}
-.s19-contact{margin-top:26px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted);letter-spacing:0.04em;display:flex;gap:20px;justify-content:center;flex-wrap:wrap;}
+.s19-logo{margin-top:24px;font-family:'Lexend',sans-serif;font-weight:800;font-size:26px;}
+.s19-contact{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted);letter-spacing:0.04em;display:flex;gap:20px;justify-content:center;flex-wrap:wrap;}
 .s19-contact span{color:var(--red-2);}
 .s19-copy{margin-top:18px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted-2);letter-spacing:0.06em;}
 
@@ -1188,14 +1190,18 @@ h1,h2,h3{font-family:'Lexend',sans-serif;letter-spacing:0.005em;font-weight:500;
     <span class="slide-num"></span>
     <span class="brand-mark"><svg class="logo-mark" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg></span>
   </div>
-  <div class="eyebrow" style="justify-content:center;">Vamos Começar?</div>
-  <h2 class="s19-title">Ainda à procura?<br>Fale connosco.</h2>
-  <p class="subtitle red" style="font-weight:700;font-size:22px;text-transform:uppercase;letter-spacing:0.01em;max-width:640px;">Na digiUP desenvolvemos a solução à medida da sua empresa.</p>
-  <div class="s19-contact"><span>931 784 170</span><span>joao@digiup.me</span><span>Vila Nova de Gaia · Amarante</span></div>
-  <div class="s19-logo">
-    <svg class="logo-mark-xl" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg>
+  <div class="s19-main">
+    <div class="eyebrow" style="justify-content:center;">Vamos Começar?</div>
+    <h2 class="s19-title">Ainda à procura?<br>Fale connosco.</h2>
+    <p class="subtitle red" style="font-weight:700;font-size:22px;text-transform:uppercase;letter-spacing:0.01em;max-width:640px;">Na digiUP desenvolvemos a solução à medida da sua empresa.</p>
   </div>
-  <div class="s19-copy">2013—2026 // © TODOS OS DIREITOS RESERVADOS</div>
+  <div class="s19-footer">
+    <div class="s19-contact"><span>931 784 170</span><span>joao@digiup.me</span><span>Vila Nova de Gaia · Amarante</span></div>
+    <div class="s19-logo">
+      <svg class="logo-mark-xl" viewBox="0 0 1127.8 615.17"><use href="#digiup-logo"></use></svg>
+    </div>
+    <div class="s19-copy">2013—2026 // © TODOS OS DIREITOS RESERVADOS</div>
+  </div>
 </section>
 
 </div>
